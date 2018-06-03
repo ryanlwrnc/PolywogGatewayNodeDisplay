@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
+#include <unistd.h>
 #include<sys/types.h>
 #include<sys/socket.h>
 #include<arpa/inet.h>
@@ -8,6 +9,47 @@
 
 #define BUFFLEN 1024
 #define PORT 4955
+#define MAX_NODES 256
+#define DATA_SIZE 26
+#define MAX_AGE 30
+#define SLEEP_TIME 1
+
+int nodesAlive[MAX_NODES];
+
+void initArray() {
+   int i;
+
+   for(i = 0; i < MAX_NODES; i++) {
+      nodesAlive[i] = 0;
+   }
+}
+
+void updateAge(BYTE *data) {
+   int i;
+
+   sleep(SLEEP_TIME);
+
+   for (i = 0; i < DATA_SIZE; i++) {
+      if (data[i] != 0)
+         nodesAlive[data[i]] = MAX_AGE;
+   }
+
+   for (i = 0; i < MAX_NODES; i++) {
+      if (nodesAlive[i] != 0)
+         nodesAlive[i]--;
+   }
+}
+
+void displayAliveNodes() {
+   int i;
+   
+   printf("Alive nodes:\n");
+
+   for (i = 0; i < MAX_NODES; i++) {
+      if (nodesAlive[i] != 0)
+         printf("%x\n", i);
+   }
+}
 
 void main()
 {
@@ -20,6 +62,9 @@ void main()
    PW_HDR hd_recv;   // srcAddr, dstAddr
    unsigned int net_num;
    BYTE srcAddr, dstAddr;
+   BYTE data[DATA_SIZE];
+
+   initArray(nodesAlive);
 
 	/* Create server socket */
 	if((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
@@ -64,6 +109,12 @@ void main()
 
       pack_recv = gwp->packet;
       hd_recv = pack_recv.header;
+
+      memcpy(data, pack_recv.data, DATA_SIZE);
+
+      updateAge(data);
+
+      displayAliveNodes();
 
       srcAddr = hd_recv.srcAddr;
       dstAddr = hd_recv.dstAddr;
