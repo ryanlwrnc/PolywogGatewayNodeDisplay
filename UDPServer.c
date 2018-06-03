@@ -4,6 +4,7 @@
 #include<sys/types.h>
 #include<sys/socket.h>
 #include<arpa/inet.h>
+#include "polywog.h"
 
 #define BUFFLEN 1024
 #define PORT 4955
@@ -14,6 +15,11 @@ void main()
 	struct sockaddr_in serverAddr, clientAddr;
 	int sockfd, clientLen, i=0;
 	char buffer[BUFFLEN];
+   GW_PACKET *gwp;
+   PW_PACKET pack_recv;
+   PW_HDR hd_recv;   // srcAddr, dstAddr
+   unsigned int net_num;
+   BYTE srcAddr, dstAddr;
 
 	/* Create server socket */
 	if((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
@@ -51,7 +57,22 @@ void main()
 			exit(1);
 		}
 
-		printf("Client Data Received: %s\n", buffer);
+      gwp = (GW_PACKET *)buffer;
+      net_num = gwp->gw_header.network_number;
+
+      printf("Network # detected: %d\n", net_num);
+
+      pack_recv = gwp->packet;
+      hd_recv = pack_recv.header;
+
+      srcAddr = hd_recv.srcAddr;
+      dstAddr = hd_recv.dstAddr;
+
+      printf("Source address: 0x%x\n", srcAddr);
+      printf("Destination address: 0x%x\n", dstAddr);
+      printf("\n");
+
+		//printf("Client Data Received: %s\n", buffer);
 
 
 		/*if((sendto(sockfd, buffer, BUFFLEN, 0, (struct sockaddr *)&clientAddr, clientLen)) == -1)
