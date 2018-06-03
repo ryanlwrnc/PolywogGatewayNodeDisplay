@@ -54,11 +54,11 @@ void main()
 		printf("Client Data Received: %s\n", buffer);
 
 
-		if((sendto(sockfd, buffer, BUFFLEN, 0, (struct sockaddr *)&clientAddr, clientLen)) == -1)
+		/*if((sendto(sockfd, buffer, BUFFLEN, 0, (struct sockaddr *)&clientAddr, clientLen)) == -1)
 		{
 			perror("sendto failed");
 			exit(1);
-		}
+		}*/
 
 	}
 
