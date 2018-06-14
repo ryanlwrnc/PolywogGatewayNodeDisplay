@@ -11,43 +11,25 @@
 #define PORT 4955
 #define MAX_NODES 256
 #define DATA_SIZE 26
-#define MAX_AGE 30
-#define SLEEP_TIME 1
 
-int nodesAlive[MAX_NODES];
+BYTE data[DATA_SIZE];
 
 void initArray() {
    int i;
 
-   for(i = 0; i < MAX_NODES; i++) {
-      nodesAlive[i] = 0;
+   for(i = 0; i < DATA_SIZE; i++) {
+      data[i] = 0;
    }
 }
 
-void updateAge(BYTE *data) {
+void displayMDT() {
    int i;
 
-   sleep(SLEEP_TIME);
+   printf("Active nodes:\n");
 
-   for (i = 0; i < DATA_SIZE; i++) {
+   for(i = 0; i < DATA_SIZE; i++) {
       if (data[i] != 0)
-         nodesAlive[data[i]] = MAX_AGE;
-   }
-
-   for (i = 0; i < MAX_NODES; i++) {
-      if (nodesAlive[i] != 0)
-         nodesAlive[i]--;
-   }
-}
-
-void displayAliveNodes() {
-   int i;
-   
-   printf("Alive nodes:\n");
-
-   for (i = 0; i < MAX_NODES; i++) {
-      if (nodesAlive[i] != 0)
-         printf("%x\n", i);
+         printf("0x%x\n", data[i]);
    }
 }
 
@@ -55,16 +37,15 @@ void main()
 {
 
 	struct sockaddr_in serverAddr, clientAddr;
-	int sockfd, clientLen, i=0;
+	int sockfd, clientLen, i=0, packNum = 0;
 	char buffer[BUFFLEN];
    GW_PACKET *gwp;
    PW_PACKET pack_recv;
    PW_HDR hd_recv;   // srcAddr, dstAddr
    unsigned int net_num;
    BYTE srcAddr, dstAddr;
-   BYTE data[DATA_SIZE];
 
-   initArray(nodesAlive);
+   initArray(); 
 
 	/* Create server socket */
 	if((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
@@ -105,33 +86,26 @@ void main()
       gwp = (GW_PACKET *)buffer;
       net_num = gwp->gw_header.network_number;
 
+      printf("Packet #%d received\n", packNum);
       printf("Network # detected: %d\n", net_num);
 
       pack_recv = gwp->packet;
       hd_recv = pack_recv.header;
 
       memcpy(data, pack_recv.data, DATA_SIZE);
-
-      updateAge(data);
-
-      displayAliveNodes();
-
+      
       srcAddr = hd_recv.srcAddr;
       dstAddr = hd_recv.dstAddr;
 
       printf("Source address: 0x%x\n", srcAddr);
       printf("Destination address: 0x%x\n", dstAddr);
+
+      displayMDT();
+      initArray();  
+
       printf("\n");
 
-		//printf("Client Data Received: %s\n", buffer);
-
-
-		/*if((sendto(sockfd, buffer, BUFFLEN, 0, (struct sockaddr *)&clientAddr, clientLen)) == -1)
-		{
-			perror("sendto failed");
-			exit(1);
-		}*/
-
+      packNum++;
 	}
 
 	close(sockfd);
